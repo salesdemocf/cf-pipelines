@@ -15,7 +15,7 @@ steps:
     arguments:
       repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
       revision: ${{CF_REVISION}}
-      git: ${{}}
+      git: ${{GIT_INTEGRATION_NAME}}
     stage: Clone GIT Repos
 
   BuildDockerfile:
@@ -30,8 +30,10 @@ steps:
   GITCloneConfigs:
     title: Cloning Configs GIT Repository...
     type: git-clone
-    repo: ${{CF_REPO_OWNER}}/configs
-    revision: main
+    arguments:
+      repo: ${{CF_REPO_OWNER}}/configs
+      revision: main
+      git: ${{GIT_INTEGRATION_NAME}}
     stage: Clone GIT Repos
     when:
       condition:
