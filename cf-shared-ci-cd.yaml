@@ -94,7 +94,7 @@ steps:
 
   ReportImageMetadataAll:
     title: Reporting Image to Codefresh...
-    type: codefresh-report-image
+    type: codefresh-report-image:1.0.10
     working_directory: /code
     arguments:
       CF_API_KEY: ${{CF_API_KEY}}
@@ -133,7 +133,7 @@ steps:
 
   CommitandPush:
     title: Committing manifest...
-    type: git-commit
+    type: git-commit:0.1.4
     arguments:
       repo: '${{CF_REPO_OWNER}}/configs'
       git: '${{GIT_INTEGRATION_NAME}}'
