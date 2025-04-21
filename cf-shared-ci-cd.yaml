@@ -15,16 +15,16 @@ steps:
     arguments:
       repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
       revision: ${{CF_REVISION}}
-      git: salesdemocf
+      git: ${{}}
     stage: Clone GIT Repos
 
   BuildDockerfile:
     title: Building Docker Image...
     type: build
     working_directory: ${{GITCloneSource}}
-    image_name: ${{ABBR}}/${{CF_REPO_NAME}}
+    image_name: ${{ABBR}}-${{CF_REPO_NAME}}
     tag: ${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
-    registry: codedev-artifactory
+    registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Build Docker Image
     
   GITCloneConfigs:
@@ -42,9 +42,9 @@ steps:
     title: Building Release Candidate Docker...
     type: build
     working_directory: ${{GITCloneSource}}
-    image_name: ${{ABBR}}/${{CF_REPO_NAME}}
+    image_name: ${{ABBR}}-${{CF_REPO_NAME}}
     tag: pr-${{CF_PULL_REQUEST_NUMBER}}-${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
-    registry: codedev-artifactory
+    registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Create Release Candidate
     when:
       condition:
@@ -71,7 +71,7 @@ steps:
       candidate: '${{BuildDockerfile}}'
       tag: ${{RELEASE_CANDIDATE_IMAGE_TAG}}
       image_name: ${{CF_REPO_NAME}}
-      registry: codedev-artifactory
+      registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Create Release Candidate
     when:
       condition:
@@ -82,7 +82,7 @@ steps:
     title: Reading GitHub Token...
     image: codefresh/cli
     commands:
-      - export GITHUB_TOKEN=$(codefresh get context ${{CF_REPO_OWNER}} --decrypt -o yaml | yq .spec.data.auth.password | tr -d '"')
+      - export GITHUB_TOKEN=$(codefresh get context ${{GIT_INTEGRATION_NAME}} --decrypt -o yaml | yq .spec.data.auth.password | tr -d '"')
       - echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
     stage: Report Image Details 
     when:
