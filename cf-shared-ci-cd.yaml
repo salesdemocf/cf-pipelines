@@ -77,7 +77,7 @@ steps:
     title: Pushing Release Candidate...
     type: push
     arguments:
-      candidate: '${{BuildReleaseCandidate}}'
+      candidate: '${{BuildDockerfile}}'
       tag: ${{RELEASE_CANDIDATE_IMAGE_TAG}}
       image_name: ${{ABBR}}-${{CF_REPO_NAME}}
       registry: ${{REGISTRY_INTEGRATION_NAME}}

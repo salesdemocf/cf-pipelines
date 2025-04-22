@@ -23,10 +23,10 @@ steps:
     type: build
     arguments:
       working_directory: ${{GITCloneSource}}
-      image_name: ${{ABBR}}-${{CF_REPO_NAME}}
+      image_name: workshop/${{CF_REPO_NAME}}
       tags: 
-        - ${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
-        - 1.0.0
+        - ${{ABBR}}-${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
+        - ${{ABBR}}-1.0.0
       registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Build Docker Image
     when:
