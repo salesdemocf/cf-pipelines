@@ -128,7 +128,7 @@ steps:
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
       - service=${CF_REPO_NAME#"cf-"} yq -i '.[env(service)].image.tag = "${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
-      - yq -i '.appVersion = "v${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
+      - yq -i '.appVersion = "${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
       - echo "After Changes"
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
