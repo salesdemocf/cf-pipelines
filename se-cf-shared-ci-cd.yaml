@@ -141,7 +141,6 @@ steps:
       commit_message: 'Deploy ${{CF_REPO_NAME}} Promotion Candidate ${{RELEASE_CANDIDATE_IMAGE_TAG}} to environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml'
       git_user_name: codefresh-automation
       git_user_email: automation@codefresh.io
-      rebase: true
     stage: Deploy Release Candidate
     when:
       condition:
