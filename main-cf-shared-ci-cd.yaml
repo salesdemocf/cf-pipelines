@@ -21,12 +21,19 @@ steps:
   BuildDockerfile:
     title: Building Docker Image...
     type: build
-    working_directory: ${{GITCloneSource}}
-    image_name: ${{ABBR}}-${{CF_REPO_NAME}}
-    tag: ${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
-    registry: ${{REGISTRY_INTEGRATION_NAME}}
+    arguments:
+      working_directory: ${{GITCloneSource}}
+      image_name: ${{ABBR}}-${{CF_REPO_NAME}}
+      tags: 
+        - ${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
+        - 1.0.0
+      registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Build Docker Image
-    
+    when:
+      condition:
+        all:
+          isNOTMerge: 'includes("${{CF_PULL_REQUEST_MERGED}}", "CF_PULL_REQUEST_MERGED") == true'
+
   GITCloneConfigs:
     title: Cloning Configs GIT Repository...
     type: git-clone
