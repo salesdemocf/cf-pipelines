@@ -31,7 +31,7 @@ steps:
     title: Cloning Configs GIT Repository...
     type: git-clone
     arguments:
-      repo: ${{CF_REPO_OWNER}}/configs
+      repo: ${{CF_REPO_OWNER}}/cf-configs
       revision: ${{ABBR}}
       git: ${{GIT_INTEGRATION_NAME}}
     stage: Clone GIT Repos
