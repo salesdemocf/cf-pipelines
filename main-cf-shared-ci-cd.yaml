@@ -72,7 +72,7 @@ steps:
     arguments:
       candidate: '${{BuildDockerfile}}'
       tag: ${{RELEASE_CANDIDATE_IMAGE_TAG}}
-      image_name: ${{CF_REPO_NAME}}
+      image_name: ${{ABBR}}-${{CF_REPO_NAME}}
       registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Create Release Candidate
     when:
