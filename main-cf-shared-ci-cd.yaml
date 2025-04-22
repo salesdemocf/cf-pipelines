@@ -58,7 +58,8 @@ steps:
     image: quay.io/codefresh-contrib/yq:4
     working_directory: ${{GITCloneConfigs}}/environments/development/${{ABBR}}/${{CF_REPO_NAME}}
     commands:
-      - export CURRENT_VERSION=$(yq .${{CF_REPO_NAME}}.image.tag values.yaml)
+      - cf_export SERVICE=${CF_REPO_NAME#"cf-"}
+      - export CURRENT_VERSION=$(yq .${{SERVICE}}.image.tag values.yaml)
       - cf_export RELEASE_CANDIDATE_IMAGE_TAG=$(echo $CURRENT_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=. |  sed 's/\"//g')
     stage: Create Release Candidate
     when:
