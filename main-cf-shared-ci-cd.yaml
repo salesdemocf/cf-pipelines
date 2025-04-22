@@ -90,7 +90,7 @@ steps:
     when:
       condition:
         all:
-          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+          isMerge: '"${{CF_PULL_REQUEST_MERGED}}" == "true"'
 
   ReportImageMetadataAll:
     title: Reporting Image to Codefresh...
