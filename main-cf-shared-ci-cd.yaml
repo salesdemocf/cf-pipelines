@@ -66,7 +66,7 @@ steps:
     working_directory: ${{GITCloneConfigs}}/environments/development/${{ABBR}}/${{CF_REPO_NAME}}
     commands:
       - export CURRENT_VERSION=$(yq .${CF_REPO_NAME#"cf-"}.image.tag values.yaml)
-      - cf_export RELEASE_CANDIDATE_IMAGE_TAG=$(echo $CURRENT_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=. |  sed 's/\"//g')
+      - cf_export RELEASE_CANDIDATE_IMAGE_TAG=$(echo ${CURRENT_VERSION#"${{ABBR}}-"} | awk -F. '/[0-9]+\./{$NF++;print}' OFS=. |  sed 's/\"//g')
     stage: Create Release Candidate
     when:
       condition:
@@ -127,7 +127,7 @@ steps:
       - echo "Before Changes"
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
-      - service=${CF_REPO_NAME#"cf-"} abbr=${ABBR} yq -i '.[env(service)].image.tag = "[env(abbr)]-${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
+      - service=${CF_REPO_NAME#"cf-"} abbr=${ABBR} yq -i '.[env(service)].image.tag = "env(abbr)-${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
       - yq -i '.appVersion = "${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}/${{CF_REPO_NAME}}/Chart.yaml
       - echo "After Changes"
       - cat environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml
