@@ -1,0 +1,149 @@
+version: '1.0'
+
+stages:
+  - Clone GIT Repos
+  - Build Docker Image
+  - Create Release Candidate
+  - Report Image Details
+  - Deploy Release Candidate
+
+steps:
+
+  GITCloneSource:
+    title: Cloning Source Code GIT Repository...
+    type: git-clone
+    arguments:
+      repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+      revision: ${{CF_REVISION}}
+      git: ${{GIT_INTEGRATION_NAME}}
+    stage: Clone GIT Repos
+
+  BuildDockerfile:
+    title: Building Docker Image...
+    type: build
+    working_directory: ${{GITCloneSource}}
+    image_name: ${{ABBR}}-${{CF_REPO_NAME}}
+    tag: ${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
+    registry: ${{REGISTRY_INTEGRATION_NAME}}
+    stage: Build Docker Image
+    
+  GITCloneConfigs:
+    title: Cloning Configs GIT Repository...
+    type: git-clone
+    arguments:
+      repo: ${{CF_REPO_OWNER}}/configs
+      revision: main
+      git: ${{GIT_INTEGRATION_NAME}}
+    stage: Clone GIT Repos
+    when:
+      condition:
+        all:
+          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+
+  BuildReleaseCandidate:
+    title: Building Release Candidate Docker...
+    type: build
+    working_directory: ${{GITCloneSource}}
+    image_name: ${{ABBR}}-${{CF_REPO_NAME}}
+    tag: pr-${{CF_PULL_REQUEST_NUMBER}}-${{CF_BRANCH_TAG_NORMALIZED}}-${{CF_SHORT_REVISION}}
+    registry: ${{REGISTRY_INTEGRATION_NAME}}
+    stage: Create Release Candidate
+    when:
+      condition:
+        all:
+          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+
+  DetermineReleaseCandidate:
+    title: Determining Release Candidate...
+    image: quay.io/codefresh-contrib/yq:4
+    working_directory: ${{GITCloneConfigs}}/environments/development/${{CF_REPO_NAME}}
+    commands:
+      - export CURRENT_VERSION=$(yq .${{CF_REPO_NAME}}.image.tag values.yaml)
+      - cf_export RELEASE_CANDIDATE_IMAGE_TAG=$(echo $CURRENT_VERSION | awk -F. '/[0-9]+\./{$NF++;print}' OFS=. |  sed 's/\"//g')
+    stage: Create Release Candidate
+    when:
+      condition:
+        all:
+          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+      
+  PushReleaseCandidate:
+    title: Pushing Release Candidate...
+    type: push
+    arguments:
+      candidate: '${{BuildDockerfile}}'
+      tag: ${{RELEASE_CANDIDATE_IMAGE_TAG}}
+      image_name: ${{CF_REPO_NAME}}
+      registry: ${{REGISTRY_INTEGRATION_NAME}}
+    stage: Create Release Candidate
+    when:
+      condition:
+        all:
+          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+
+  GetGITToken:
+    title: Reading GitHub Token...
+    image: codefresh/cli
+    commands:
+      - export GITHUB_TOKEN=$(codefresh get context ${{GIT_INTEGRATION_NAME}} --decrypt -o yaml | yq .spec.data.auth.password | tr -d '"')
+      - echo "GITHUB_TOKEN=$GITHUB_TOKEN" >> ${{CF_VOLUME_PATH}}/env_vars_to_export
+    stage: Report Image Details 
+    when:
+      condition:
+        all:
+          isPR: 'includes("${{CF_PULL_REQUEST_NUMBER}}", "CF_PULL_REQUEST_NUMBER") == false'
+
+  ReportImageMetadataAll:
+    title: Reporting Image to Codefresh...
+    type: codefresh-report-image:1.0.10
+    working_directory: /code
+    arguments:
+      CF_API_KEY: ${{CF_API_KEY}}
+      CF_RUNTIME_NAME: ${{GITOPS_RUNTIME_NAME}}
+      CF_CONTAINER_REGISTRY_INTEGRATION: ${{REGISTRY_INTEGRATION_NAME}}
+      CF_GITHUB_TOKEN: ${{GITHUB_TOKEN}}
+      CF_GIT_PROVIDER: github
+      CF_GIT_REPO: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+      CF_GIT_BRANCH: ${{CF_BRANCH}}
+      CF_IMAGE: ${{REGISTRY_FQDN}}/${{ABBR}}/${{CF_REPO_NAME}}:${{RELEASE_CANDIDATE_IMAGE_TAG}}
+    stage: Report Image Details
+    when:
+      condition:
+        all:
+          isMerge: '"${{CF_PULL_REQUEST_MERGED}}" == "true"'
+
+  UpdateDevelopmentConfig:
+    title: Updating Development Change...
+    type: freestyle
+    image: quay.io/codefresh-contrib/yq:4
+    working_directory: ${{GITCloneConfigs}}
+    commands:
+      - echo "Before Changes"
+      - cat environments/development/${{ABBR}}-${{CF_REPO_NAME}}/values.yaml
+      - cat environments/development/${{ABBR}}-${{CF_REPO_NAME}}/Chart.yaml
+      - yq -i '.${{CF_REPO_NAME}}.image.tag = "${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}-${{CF_REPO_NAME}}/values.yaml
+      - yq -i '.appVersion = "${{RELEASE_CANDIDATE_IMAGE_TAG}}"' environments/development/${{ABBR}}-${{CF_REPO_NAME}}/Chart.yaml
+      - echo "After Changes"
+      - cat environments/development/${{ABBR}}-${{CF_REPO_NAME}}/values.yaml
+      - cat environments/development/${{ABBR}}-${{CF_REPO_NAME}}/Chart.yaml
+    stage: Deploy Release Candidate
+    when:
+      condition:
+        all:
+          isMerge: '"${{CF_PULL_REQUEST_MERGED}}" == "true"'
+
+  CommitandPush:
+    title: Committing manifest...
+    type: git-commit:0.1.4
+    arguments:
+      repo: '${{CF_REPO_OWNER}}/configs'
+      git: '${{GIT_INTEGRATION_NAME}}'
+      working_directory: '${{CF_VOLUME_PATH}}/configs'
+      commit_message: 'Deploy ${{CF_REPO_NAME}} Promotion Candidate ${{RELEASE_CANDIDATE_IMAGE_TAG}} to environments/development/${{ABBR}}-${{CF_REPO_NAME}}/values.yaml'
+      git_user_name: codefresh-automation
+      git_user_email: automation@codefresh.io
+      rebase: true
+    stage: Deploy Release Candidate
+    when:
+      condition:
+        all:
+          isMerge: '"${{CF_PULL_REQUEST_MERGED}}" == "true"'
