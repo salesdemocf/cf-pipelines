@@ -144,6 +144,7 @@ steps:
     arguments:
       repo: '${{CF_REPO_OWNER}}/cf-configs'
       git: '${{GIT_INTEGRATION_NAME}}'
+      base_branch: ${{ABBR}}
       working_directory: '${{CF_VOLUME_PATH}}/cf-configs'
       commit_message: 'Deploy ${{CF_REPO_NAME}} Promotion Candidate ${{RELEASE_CANDIDATE_IMAGE_TAG}} to environments/development/${{ABBR}}/${{CF_REPO_NAME}}/values.yaml'
       git_user_name: codefresh-automation
