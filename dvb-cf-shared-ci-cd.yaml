@@ -3,6 +3,7 @@ version: '1.0'
 stages:
   - Clone GIT Repos
   - Build Docker Image
+  - Test Docker Image
   - Create Release Candidate
   - Report Image Details
   - Deploy Release Candidate
@@ -29,6 +30,21 @@ steps:
         - ${{ABBR}}-1.0.0
       registry: ${{REGISTRY_INTEGRATION_NAME}}
     stage: Build Docker Image
+    when:
+      condition:
+        all:
+          isNOTMerge: 'includes("${{CF_PULL_REQUEST_MERGED}}", "CF_PULL_REQUEST_MERGED") == true'
+
+  TestImage:
+    title: Testing Image...
+    image: ${{BuildDockerfile}}
+    working_directory: ${{GITCloneSource}}
+    commands: 
+      - ls -ltra
+      - sleep ${DURATION}
+    environment:
+      - DURATION=2
+    stage: Test Docker Image
     when:
       condition:
         all:
